@@ -1,0 +1,2 @@
+# QuizzAI
+StuddyApp
