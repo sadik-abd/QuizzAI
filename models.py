@@ -34,7 +34,7 @@ class QuizzGenModel:
                     print(outp)
                     qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
                 except json.JSONDecodeError:
-                    qna_json = {"message":"Something went wrong please try again"}
+                    qna_json = {"message":"Something went wrong please try again","data":outp}
 
             return qna_json
         else:
@@ -68,7 +68,7 @@ class QuizzGenModel:
                     print(outp)
                     qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
                 except json.JSONDecodeError:
-                    qna_json = {"message":"Something went wrong please try again"}
+                    qna_json = {"message":"Something went wrong please try again","data":outp}
 
             return qna_json
 
