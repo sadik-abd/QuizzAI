@@ -8,69 +8,42 @@ class QuizzGenModel:
         self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
         self.mixtral = MixtralModel("")
 
-    def generate(self, pdf_path: str,num_ques : int,user_req="",ocr_scan=False,lang="english"):
-        if lang.lower() != "german":
-            # First, extract text from the PDF.
-            texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
-            if ocr_scan:  # If text extraction failed, fall back to OCR.
-                texts = load_pdf_ocr(pdf_path)
-            
-            # Combine all text pieces into one string for context.
-            context = "\n######### New Page starts #############\n".join(texts)
-            # Use the ClaudeModel to generate questions and answers.
-            primary_prompt = prompts.get_prompt(num_ques,user_req) + "\n" + context
-            response = self.claude_model.predict(primary_prompt)
-            outp = ""
-            # Format the ClaudeModel response into JSON.
-            # Assuming response.content contains the questions and answers in the desired format.
+    def generate(self, pdf_path: str,num_ques : int,histpath="", user_req="",ocr_scan=False,lang="english"):
+    
+        # First, extract text from the PDF.
+        history = {}
+        texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
+        if ocr_scan:  # If text extraction failed, fall back to OCR.
+            texts = load_pdf_ocr(pdf_path)
+        
+        # Combine all text pieces into one string for context.
+        context = "\n######### New Page starts #############\n".join(texts)
+        # Use the ClaudeModel to generate questions and answers.
+        primary_prompt = prompts.get_prompt(num_ques,user_req) + "\n" + context
+        response = self.claude_model.predict(primary_prompt)
+        outp = ""
+        error_occured = False
+        # Format the ClaudeModel response into JSON.
+        # Assuming response.content contains the questions and answers in the desired format.
+        try:
+            # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
+            outp = response.content[0].text
+            qna_json = json.loads(outp)
+        except json.JSONDecodeError:
+            # If there's a problem with parsing, log or handle it accordingly.
             try:
-                # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-                outp = response.content[0].text
-                qna_json = json.loads(outp)
+                outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
+                print(outp)
+                qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
             except json.JSONDecodeError:
-                # If there's a problem with parsing, log or handle it accordingly.
-                try:
-                    outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
-                    print(outp)
-                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
-                except json.JSONDecodeError:
-                    qna_json = {"message":"Something went wrong please try again","data":outp}
-
-            return qna_json
-        else:
-            # First, extract text from the PDF.
-            texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
-            if ocr_scan:  # If text extraction failed, fall back to OCR.
-                texts = load_pdf_ocr(pdf_path)
-            
-            # Combine all text pieces into one string for context.
-            context = "\n######### New Page starts #############\n"
-            for text in texts:
-                outp = self.mixtral.get_completion("translate the following text into english. \n"+text)
-                context += outp
-                context += "\n######### New Page starts #############\n"
-            # Use the ClaudeModel to generate questions and answers.
-            user_rq = self.mixtral.get_completion("translate the following text into english. \n"+user_req)
-            primary_prompt = prompts.get_prompt(num_ques,user_rq) + "\n" + context
-            response = self.claude_model.predict(primary_prompt)
-            outp = ""
-            # Format the ClaudeModel response into JSON.
-            # Assuming response.content contains the questions and answers in the desired format.
-            try:
-                # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-                outp = response.content[0].text
-                outp = self.mixtral.get_completion("translate the following text into German. \n"+outp)
-                qna_json = json.loads(outp)
-            except json.JSONDecodeError:
-                # If there's a problem with parsing, log or handle it accordingly.
-                try:
-                    outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
-                    print(outp)
-                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
-                except json.JSONDecodeError:
-                    qna_json = {"message":"Something went wrong please try again","data":outp}
-
-            return qna_json
+                error_occured = True
+                qna_json = {"message":"Something went wrong please try again","data":outp}
+        if not error_occured:
+            history["user"] = []
+            history["user"].append({"role":"user","content":f"generate questions on this file {histpath}. and keep this things in mind while generating questions. {user_req}"})
+            history["user"].append({"role":"assistant","content":json.dumps(qna_json)})
+            json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
+        return qna_json
 
     def feedback_qna(self, qn_inp, hist, lang = "english"):
         if lang.lower() != "german":

@@ -15,3 +15,18 @@ class ChatHistory:
     def save(self):
         with open(self.recp_name + ".json","w") as fl:
             json.dump(self.data, fl,indent=4)
+
+
+class User:
+    def __init__(self) -> None:
+        self.name = ""
+        self.uuid = ""
+        self.hisotry = ""
+        self.docs = []
+        self.json_file = []
+
+    def save_docs(self):
+        pass
+
+    def save_feedbacks(self):
+        pass
