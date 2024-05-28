@@ -48,14 +48,14 @@ class QuizzGenModel:
         ans = '\n'.join(qn_inp)
         if lang.lower() != "german":
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question
+            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects 
             User Answers: {ans}
             """
-            response = self.claude_model.predict(prmpt,hist)
+            response = self.claude_model.predict(prmpt,hist).content[0].text
             return {"data":response, "costing":""}
         else:
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question
+            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects 
             User Answers: {ans}
             """
             response = self.mixtral.predict(prmpt,hist)
