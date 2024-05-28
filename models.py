@@ -48,15 +48,37 @@ class QuizzGenModel:
         ans = '\n'.join(qn_inp)
         if lang.lower() != "german":
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects 
+            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {"feedback":["array of feedbacks for all the answers"]}
             User Answers: {ans}
             """
             response = self.claude_model.predict(prmpt,hist).content[0].text
-            return {"data":response, "costing":""}
+            try:
+                # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
+                qna_json = json.loads(response)
+            except json.JSONDecodeError:
+                # If there's a problem with parsing, log or handle it accordingly.
+                try:
+                    outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
+                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
+                except json.JSONDecodeError:
+                    error_occured = True
+                    qna_json = {"message":"Something went wrong please try again","data":outp}
+            return {"data":qna_json, "costing":""}
         else:
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects 
+            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects. json object should be like this. {"feedback":["array of feedbacks for all the answers"]}
             User Answers: {ans}
             """
-            response = self.mixtral.predict(prmpt,hist)
-            return {"data":response, "costing":""}
+            try:
+                # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
+                qna_json = json.loads(response)
+            except json.JSONDecodeError:
+                # If there's a problem with parsing, log or handle it accordingly.
+                try:
+                    outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
+                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
+                except json.JSONDecodeError:
+                    error_occured = True
+                    qna_json = {"message":"Something went wrong please try again","data":outp}
+            return {"data":qna_json, "costing":""}
+
