@@ -46,7 +46,7 @@ class QuizzGenModel:
 
     def feedback_qna(self, qn_inp, hist, lang = "english"):
         ans = '\n'.join(qn_inp)
-        stt = """{"feedback":["array of feedbacks for all the answers"]}"""
+        stt = """[{"index":0 # Question index,"feedback":"example feedback","score":3 #give a integer score under 5}]"""
         if lang.lower() != "german":
             prmpt = f"""
             User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
