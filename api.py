@@ -77,7 +77,7 @@ async def gen_feedback(data : FeedbackSchema):
     try:
         # Process the data
         saved_path = os.path.join(f"data/{data.userid}/{data.subject}", f"{data.docname}.json")
-        print(json.load(open(saved_path,"r","utf-8"))["user"])
+        print(json.load(open(saved_path,"r","utf-8")))
         outp = model.feedback_qna(data.user_answers, )
 
         # Respond back with the processed data or a success message
