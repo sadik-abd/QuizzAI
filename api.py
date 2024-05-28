@@ -29,7 +29,7 @@ class GenSchema(BaseModel):
 class FeedbackSchema(BaseModel):
     userid : str
     subject : str
-    user_answers : list
+    user_answers : list[str]
     docname : str
 
 class HistSchema(BaseModel):
