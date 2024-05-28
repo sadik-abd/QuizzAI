@@ -74,16 +74,11 @@ async def gen_message(
 
 @app.post("/gen_feedback")
 async def gen_feedback(data : FeedbackSchema):
-    try:
-        # Process the data
-        saved_path = os.path.join(f"data/{data.userid}/{data.subject}", f"{data.docname}.json")
-        outp = model.feedback_qna(data.user_answers, json.load(open(saved_path,"w","utf-8"))["user"])
+    saved_path = os.path.join(f"data/{data.userid}/{data.subject}", f"{data.docname}.json")
+    outp = model.feedback_qna(data.user_answers, json.load(open(saved_path,"w","utf-8"))["user"])
 
-        # Respond back with the processed data or a success message
-        return {"message": "Model Feedback is given", "output": outp}
-    except Exception as e:
-        # Handle errors
-        raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
+    # Respond back with the processed data or a success message
+    return {"message": "Model Feedback is given", "output": outp}
 
 if __name__ == "__main__":
     import uvicorn
