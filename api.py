@@ -61,7 +61,7 @@ async def gen_message(
             os.system(f"mkdir data/{data.userid}/{data.subject}")
         saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
         with open(saved_path, "wb+") as file_object:
-            file_object.write(await doc.file.read())
+            file_object.write(doc.file.read())
 
         # Generate the output using the model
         output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
