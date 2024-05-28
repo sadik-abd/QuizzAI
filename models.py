@@ -46,9 +46,10 @@ class QuizzGenModel:
 
     def feedback_qna(self, qn_inp, hist, lang = "english"):
         ans = '\n'.join(qn_inp)
+        stt = """{"feedback":["array of feedbacks for all the answers"]}"""
         if lang.lower() != "german":
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {"feedback":["array of feedbacks for all the answers"]}
+            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
             User Answers: {ans}
             """
             response = self.claude_model.predict(prmpt,hist).content[0].text
@@ -66,7 +67,7 @@ class QuizzGenModel:
             return {"data":qna_json, "costing":""}
         else:
             prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects. json object should be like this. {"feedback":["array of feedbacks for all the answers"]}
+            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
             User Answers: {ans}
             """
             try:
