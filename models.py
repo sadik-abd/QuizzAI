@@ -33,7 +33,6 @@ class QuizzGenModel:
             # If there's a problem with parsing, log or handle it accordingly.
             try:
                 outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
-                print(outp)
                 qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
             except json.JSONDecodeError:
                 error_occured = True
@@ -49,14 +48,14 @@ class QuizzGenModel:
         if lang.lower() != "german":
             prmpt = f"""
             User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question
-            User Answers: {qn_inp}
+            User Answers: {"\n".join(qn_inp)}
             """
             response = self.claude_model.predict(prmpt,hist)
             return {"data":response, "costing":""}
         else:
             prmpt = f"""
             User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question
-            User Answers: {qn_inp}
+            User Answers: {"\n".join(qn_inp)}
             """
             response = self.mixtral.predict(prmpt,hist)
             return {"data":response, "costing":""}
