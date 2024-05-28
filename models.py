@@ -1,62 +1,85 @@
-from llms import ClaudeModel, MixtralModel
-from doc_reader import load_pdf, load_pdf_ocr
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from models import QuizzGenModel
+import os
 import json
-import prompts
 
-class QuizzGenModel:
-    def __init__(self) -> None:
-        self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
-        self.mixtral = MixtralModel("")
+app = FastAPI()
+model = QuizzGenModel()
 
-    def generate(self, pdf_path: str,num_ques : int,histpath="", user_req="",ocr_scan=False,lang="english"):
-    
-        # First, extract text from the PDF.
-        history = {}
-        texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
-        if ocr_scan:  # If text extraction failed, fall back to OCR.
-            texts = load_pdf_ocr(pdf_path)
-        
-        # Combine all text pieces into one string for context.
-        context = "\n######### New Page starts #############\n".join(texts)
-        # Use the ClaudeModel to generate questions and answers.
-        primary_prompt = prompts.get_prompt(num_ques,user_req) + "\n" + context
-        response = self.claude_model.predict(primary_prompt)
-        outp = ""
-        error_occured = False
-        # Format the ClaudeModel response into JSON.
-        # Assuming response.content contains the questions and answers in the desired format.
-        try:
-            # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-            outp = response.content[0].text
-            qna_json = json.loads(outp)
-        except json.JSONDecodeError:
-            # If there's a problem with parsing, log or handle it accordingly.
-            try:
-                outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
-                qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
-            except json.JSONDecodeError:
-                error_occured = True
-                qna_json = {"message":"Something went wrong please try again","data":outp}
-        if not error_occured:
-            history["user"] = []
-            history["user"].append({"role":"user","content":f"generate questions on this file {histpath}. and keep this things in mind while generating questions. {user_req}"})
-            history["user"].append({"role":"assistant","content":json.dumps(qna_json)})
-            json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
-        return qna_json
+# Configure CORS
+origins = ["*"]  # Adjust this based on your frontend's domain for security
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    def feedback_qna(self, qn_inp, hist, lang = "english"):
-        ans = '\n'.join(qn_inp)
-        if lang.lower() != "german":
-            prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question
-            User Answers: {ans}
-            """
-            response = self.claude_model.predict(prmpt,hist)
-            return {"data":response, "costing":""}
-        else:
-            prmpt = f"""
-            User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question
-            User Answers: {ans}
-            """
-            response = self.mixtral.predict(prmpt,hist)
-            return {"data":response, "costing":""}
+class GenSchema(BaseModel):
+    userid : str
+    subject : str
+    docname : str
+    num_questions : int = 0 
+    prompt : str = ""
+    ocr_scan : bool = False
+
+class FeedbackSchema(BaseModel):
+    userid : str
+    subject : str
+    user_answers : list
+    docname : str
+
+class HistSchema(BaseModel):
+    userid  : str
+
+@app.post("/generate")
+async def gen_message(
+    userid: str = Form(...),
+    subject: str = Form(...),
+    docname: str = Form(...),
+    num_questions: int = Form(0),
+    prompt: str = Form(""),
+    ocr_scan: bool = Form(False),
+    doc: UploadFile = File(...)
+):
+    data = GenSchema(
+        userid=userid,
+        subject=subject,
+        docname=docname,
+        num_questions=num_questions,
+        prompt=prompt,
+        ocr_scan=ocr_scan
+    )
+    try:
+        # Save the main document
+        if not os.path.isdir(f"data/{data.userid}"):
+            os.system(f"mkdir data/{data.userid}")
+        if not os.path.isdir(f"data/{data.userid}/{data.subject}"): 
+            os.system(f"mkdir data/{data.userid}/{data.subject}")
+        saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
+        with open(saved_path, "wb+") as file_object:
+            file_object.write(doc.file.read())
+
+        # Generate the output using the model
+        output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
+
+        # Create a response
+        return output  # Sending back the JSON response
+    except Exception as e:
+        # Handle errors
+        raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
+
+@app.post("/gen_feedback")
+async def gen_feedback(data : FeedbackSchema):
+    saved_path = os.path.join(f"data/{data.userid}/{data.subject}", f"{data.docname}.json")
+    outp = model.feedback_qna(data.user_answers, json.load(open(saved_path,"w","utf-8"))["user"])
+
+    # Respond back with the processed data or a success message
+    return {"message": "Model Feedback is given", "output": outp}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000)
