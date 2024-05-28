@@ -36,7 +36,23 @@ class HistSchema(BaseModel):
     userid  : str
 
 @app.post("/generate")
-async def gen_message(data : GenSchema, doc: UploadFile = File(...)):
+async def gen_message(
+    userid: str = Form(...),
+    subject: str = Form(...),
+    docname: str = Form(...),
+    num_questions: int = Form(0),
+    prompt: str = Form(""),
+    ocr_scan: bool = Form(False),
+    doc: UploadFile = File(...)
+):
+    data = GenSchema(
+        userid=userid,
+        subject=subject,
+        docname=docname,
+        num_questions=num_questions,
+        prompt=prompt,
+        ocr_scan=ocr_scan
+    )
     try:
         # Save the main document
         if not os.path.isdir(f"data/{data.userid}"):
@@ -45,7 +61,7 @@ async def gen_message(data : GenSchema, doc: UploadFile = File(...)):
             os.system(f"mkdir data/{data.userid}/{data.subject}")
         saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
         with open(saved_path, "wb+") as file_object:
-            file_object.write(doc.file.read())
+            file_object.write(await doc.file.read())
 
         # Generate the output using the model
         output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
