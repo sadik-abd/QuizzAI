@@ -12,3 +12,18 @@ class Costings:
     
     def price_embeds(self, num_token):
         return self.embedding_price[0] * (num_token / self.embedding_price[1])
+
+
+import tiktoken
+
+def calculate_token_usage(text, model_name='gpt2'):
+    # Initialize the encoder for the specified model
+    encoder = tiktoken.get_encoding(model_name)
+    
+    # Encode the text to get the tokens
+    tokens = encoder.encode(text)
+    
+    # Calculate the total number of tokens
+    total_tokens = len(tokens)
+    
+    return total_tokens

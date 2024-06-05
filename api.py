@@ -1,5 +1,7 @@
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 from pydantic import BaseModel
 from models import QuizzGenModel
 import os
@@ -18,6 +20,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def decodeImage(data_uri: str, folder_path: str):
+    import os
+    import base64
+
+    data_uri = data_uri
+    media_type, base64_data = data_uri.split(",", 1)
+
+    # Decode the Base64 data
+    decoded_image = base64.b64decode(base64_data)
+
+    # Ensure the folder exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Save the decoded image to a file in the specified folder
+    file_path = os.path.join(folder_path, "thumbnail.png")
+    with open(file_path, "wb") as file:
+        file.write(decoded_image)
+
+
 class GenSchema(BaseModel):
     userid : str
     subject : str
@@ -32,8 +54,19 @@ class FeedbackSchema(BaseModel):
     user_answers : list[str]
     docname : str
 
-class HistSchema(BaseModel):
-    userid  : str
+
+class SubjectSchema(BaseModel):
+    userid : str
+    name : str
+    image : str
+
+@app.post("/create_subject")
+async def create_subject(data : SubjectSchema):
+    if not os.path.isdir(f"data/{data.userid}"):
+            os.system(f"mkdir data/{data.userid}")
+    if not os.path.isdir(f"data/{data.userid}/{data.name}"): 
+        os.system(f"mkdir data/{data.userid}/{data.name}")
+    decodeImage(data.image, f"data/{data.userid}/{data.name}")
 
 @app.post("/generate")
 async def gen_message(
@@ -85,6 +118,24 @@ async def gen_feedback(data : FeedbackSchema):
         # Handle errors
         raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
 
+@app.get("/history")
+async def get_history(userid : str):
+    docs = {}
+    for subject in os.listdir(f"data/{userid}/"):
+        for doc in os.listdir(f"data/{userid}/{subject}"):
+            if ".json" in doc:
+                docs[subject] = {"image":f"data/{userid}/{subject}/thumbnail.png","data":{}}
+                docs[subject]["data"][doc[:-5]] = json.load(open(f"data/{userid}/{subject}/{doc}","r",encoding="utf-8"))["user"]
+    return docs
+
+@app.get("/getimage/{folder}")
+async def get_image(image_path: str):
+    # Ensure the file exists
+    file_path = Path(image_path)
+    if file_path.is_file():
+        return FileResponse(file_path)
+    else:
+        return {"error": "File does not exist"}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)

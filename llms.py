@@ -27,6 +27,7 @@ class MixtralModel:
             hst.append({"role":"user","content":prompt})
             chat_completion = self.client.chat.completions.create(messages=hst,model=self.variant)
         usage  = chat_completion.usage
+        print(usage)
         return chat_completion.choices[0].message.content
 
 class ClaudeModel:

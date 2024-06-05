@@ -1,5 +1,6 @@
 from llms import ClaudeModel, MixtralModel
 from doc_reader import load_pdf, load_pdf_ocr
+from cost_estimator import calculate_token_usage
 import json
 import prompts
 
@@ -9,7 +10,7 @@ class QuizzGenModel:
         self.mixtral = MixtralModel("")
 
     def generate(self, pdf_path: str,num_ques : int,histpath="", user_req="",ocr_scan=False,lang="english"):
-    
+        cost = 0
         # First, extract text from the PDF.
         history = {}
         texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
@@ -23,16 +24,20 @@ class QuizzGenModel:
         response = self.claude_model.predict(primary_prompt)
         outp = ""
         error_occured = False
+        
         # Format the ClaudeModel response into JSON.
         # Assuming response.content contains the questions and answers in the desired format.
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
             outp = response.content[0].text
-            qna_json = json.loads(outp)
+            
+            qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
         except json.JSONDecodeError:
             # If there's a problem with parsing, log or handle it accordingly.
             try:
-                outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
+                
+                outp = self.mixtral.get_completion("Validate the following text. make a json object out of it and return the json object. please dont say a extra word that disrupts the quality of the json object \n '''"+outp+"'''")
+                
                 qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
             except json.JSONDecodeError:
                 error_occured = True
@@ -52,6 +57,7 @@ class QuizzGenModel:
             User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
             User Answers: {ans}
             """
+            cost += (calculate_token_usage(prmpt+" "+json.dumps(hist)) / 1_000_000) * 12
             response = self.claude_model.predict(prmpt,hist).content[0].text
             try:
                 # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
@@ -59,12 +65,12 @@ class QuizzGenModel:
             except json.JSONDecodeError:
                 # If there's a problem with parsing, log or handle it accordingly.
                 try:
-                    outp = self.mixtral.get_completion("validate this to a perfect json. do things like adding commas to places, etc... dont say a extra word. "+outp)
+                    outp = self.mixtral.get_completion("return a json object \n "+outp)
                     qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
-            return {"data":qna_json, "costing":""}
+            return {"data":qna_json, "costing":str(cost)}
         else:
             prmpt = f"""
             User Gave These answers to your generated qna. Give a feedback on these. Give feedback in german. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
