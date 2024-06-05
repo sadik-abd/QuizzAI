@@ -21,7 +21,7 @@ class QuizzGenModel:
         context = "\n######### New Page starts #############\n".join(texts)
         # Use the ClaudeModel to generate questions and answers.
         primary_prompt = prompts.get_prompt(num_ques,user_req) + "\n" + context
-        response = self.claude_model.predict(primary_prompt)
+        response, cost = self.claude_model.predict(primary_prompt)
         outp = ""
         error_occured = False
         
@@ -29,7 +29,7 @@ class QuizzGenModel:
         # Assuming response.content contains the questions and answers in the desired format.
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-            outp, cost = response.content[0].text
+            outp = response.content[0].text
             
             qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
         except json.JSONDecodeError:
