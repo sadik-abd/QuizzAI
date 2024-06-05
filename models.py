@@ -5,7 +5,7 @@ import json
 import prompts
 import re
 class QuizzGenModel:
-    def __init__(self) -> None:
+    def __init__(self, ) -> None:
         self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
         self.mixtral = MixtralModel("")
 
@@ -53,7 +53,7 @@ class QuizzGenModel:
             json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
         return qna_json
 
-    def feedback_qna(self, qn_inp, hist, lang = "english"):
+    def feedback_qna(self, qn_inp, hist, lang = "english", histpath="./",bighist=""):
         ans = '\n'.join(qn_inp)
         history = {}
         error_occured = False
@@ -77,9 +77,8 @@ class QuizzGenModel:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
             if not error_occured:
-                history["app"] = {}
-                history["app"]["feedbacks"] = qna_json 
-                json.dump(history,open(self.histpath,"w",encoding="utf-8"),indent=4)
+                bighist["app"]["feedbacks"] = qna_json 
+                json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":str(cost)}
         else:
             prmpt = f"""
@@ -97,9 +96,8 @@ class QuizzGenModel:
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
-            if not error_occured:
-                history["app"] = {}
-                history["app"]["feedbacks"] = qna_json 
-                json.dump(history,open(self.histpath,"w",encoding="utf-8"),indent=4)
+           if not error_occured:
+                bighist["app"]["feedbacks"] = qna_json 
+                json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":"0"}
 
