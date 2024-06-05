@@ -47,8 +47,9 @@ class ClaudeModel:
                 ],
                 model=self.variant,
             )
-            print(message.model_dump_json(indent=4))
-            return message
+            cost = (message.usage.input_tokens / 1_000_000) * 10
+            cost += (message.usage.output_tokens / 1_000_000) * 20
+            return message, cost
         else:
             history = hist
             history.append({
@@ -60,5 +61,7 @@ class ClaudeModel:
                 messages=hist,
                 model=self.variant,
             )
-            return message
+            cost = (message.usage.input_tokens / 1_000_000) * 10
+            cost += (message.usage.output_tokens / 1_000_000) * 20
+            return message, cost
 
