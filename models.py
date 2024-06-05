@@ -78,7 +78,7 @@ class QuizzGenModel:
                     qna_json = {"message":"Something went wrong please try again","data":outp}
             if not error_occured:
                 bighist["app"]["feedbacks"] = qna_json 
-                json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
+                json.dump(bighist,open(histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":str(cost)}
         else:
             prmpt = f"""
@@ -98,6 +98,6 @@ class QuizzGenModel:
                     qna_json = {"message":"Something went wrong please try again","data":outp}
             if not error_occured:
                 bighist["app"]["feedbacks"] = qna_json 
-                json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
+                json.dump(bighist,open(histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":"0"}
 
