@@ -67,6 +67,7 @@ async def create_subject(data : SubjectSchema):
     if not os.path.isdir(f"data/{data.userid}/{data.name}"): 
         os.system(f"mkdir data/{data.userid}/{data.name}")
     decodeImage(data.image, f"data/{data.userid}/{data.name}")
+    return "subject created"
 
 @app.post("/generate")
 async def gen_message(
@@ -123,15 +124,15 @@ async def get_history(userid : str):
     try:
         docs = {}
         for subject in os.listdir(f"data/{userid}/"):
+            docs[subject] = {"image":f"data/{userid}/{subject}/thumbnail.png","data":{}}
             for doc in os.listdir(f"data/{userid}/{subject}"):
                 if ".json" in doc:
-                    docs[subject] = {"image":f"data/{userid}/{subject}/thumbnail.png","data":{}}
                     docs[subject]["data"][doc[:-5]] = json.load(open(f"data/{userid}/{subject}/{doc}","r",encoding="utf-8"))["app"]
         return docs
     except Exception as E:
         return "empty"
 
-@app.get("/getimage/{folder}")
+@app.get("/getimage/")
 async def get_image(image_path: str):
     # Ensure the file exists
     file_path = Path(image_path)
