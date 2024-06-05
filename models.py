@@ -56,6 +56,7 @@ class QuizzGenModel:
     def feedback_qna(self, qn_inp, hist, lang = "english"):
         ans = '\n'.join(qn_inp)
         history = {}
+        error_occured = False
         stt = """[{"index":0 # Question index,"feedback":"example feedback","score":3 #give a integer score under 5}]"""
         if lang.lower() != "german":
             prmpt = f"""
