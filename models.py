@@ -96,7 +96,7 @@ class QuizzGenModel:
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
-           if not error_occured:
+            if not error_occured:
                 bighist["app"]["feedbacks"] = qna_json 
                 json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":"0"}
