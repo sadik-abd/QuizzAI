@@ -3,7 +3,7 @@ from doc_reader import load_pdf, load_pdf_ocr
 from cost_estimator import calculate_token_usage
 import json
 import prompts
-
+import re
 class QuizzGenModel:
     def __init__(self) -> None:
         self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
@@ -30,15 +30,15 @@ class QuizzGenModel:
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
             outp = response.content[0].text
-            
-            qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
+            json_str = re.search(r'\[.*\]', outp, re.DOTALL).group(0)
+            qna_json = {"data":json.loads(json_str), "costing":str(cost)}
         except json.JSONDecodeError:
             # If there's a problem with parsing, log or handle it accordingly.
             try:
                 
                 outp = self.mixtral.get_completion("Validate the following text. make a json object out of it and return the json object. please dont say a extra word that disrupts the quality of the json object \n '''"+outp+"'''")
-                
-                qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
+                json_str = re.search(r'\[.*\]', outp, re.DOTALL).group(0)
+                qna_json = {"data":json.loads(qna_json), "costing":str(cost)}
             except json.JSONDecodeError:
                 error_occured = True
                 qna_json = {"message":"Something went wrong please try again","data":outp}
