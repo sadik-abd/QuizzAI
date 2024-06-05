@@ -125,7 +125,7 @@ async def get_history(userid : str):
         for doc in os.listdir(f"data/{userid}/{subject}"):
             if ".json" in doc:
                 docs[subject] = {"image":f"data/{userid}/{subject}/thumbnail.png","data":{}}
-                docs[subject]["data"][doc[:-5]] = json.load(open(f"data/{userid}/{subject}/{doc}","r",encoding="utf-8"))["user"]
+                docs[subject]["data"][doc[:-5]] = json.load(open(f"data/{userid}/{subject}/{doc}","r",encoding="utf-8"))["app"]
     return docs
 
 @app.get("/getimage/{folder}")

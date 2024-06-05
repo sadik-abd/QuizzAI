@@ -46,11 +46,16 @@ class QuizzGenModel:
             history["user"] = []
             history["user"].append({"role":"user","content":f"generate questions on this file {histpath}. and keep this things in mind while generating questions. {user_req}"})
             history["user"].append({"role":"assistant","content":json.dumps(qna_json)})
+
+            history["app"] = {}
+            history["app"]["questions"] = qna_json
+
             json.dump(history,open(histpath,"w",encoding="utf-8"),indent=4)
         return qna_json
 
     def feedback_qna(self, qn_inp, hist, lang = "english"):
         ans = '\n'.join(qn_inp)
+        history = {}
         stt = """[{"index":0 # Question index,"feedback":"example feedback","score":3 #give a integer score under 5}]"""
         if lang.lower() != "german":
             prmpt = f"""
@@ -69,6 +74,10 @@ class QuizzGenModel:
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
+            if not error_occured:
+                history["app"] = {}
+                history["app"]["feedbacks"] = qna_json 
+                json.dump(history,open(self.histpath,"w",encoding="utf-8"),indent=4)
             return {"data":qna_json, "costing":str(cost)}
         else:
             prmpt = f"""
@@ -86,5 +95,9 @@ class QuizzGenModel:
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
-            return {"data":qna_json, "costing":""}
+            if not error_occured:
+                history["app"] = {}
+                history["app"]["feedbacks"] = qna_json 
+                json.dump(history,open(self.histpath,"w",encoding="utf-8"),indent=4)
+            return {"data":qna_json, "costing":"0"}
 
