@@ -38,7 +38,7 @@ class QuizzGenModel:
                 
                 outp = self.mixtral.get_completion("Validate the following text. make a json object out of it and return the json object. please dont say a extra word that disrupts the quality of the json object \n '''"+outp+"'''")
                 json_str = re.search(r'\[.*\]', outp, re.DOTALL).group(0)
-                qna_json = {"data":json.loads(qna_json), "costing":str(cost)}
+                qna_json = {"data":json.loads(json_str), "costing":str(cost)}
             except json.JSONDecodeError:
                 error_occured = True
                 qna_json = {"message":"Something went wrong please try again","data":outp}
@@ -62,14 +62,15 @@ class QuizzGenModel:
             User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
             User Answers: {ans}
             """
-            response,cost = self.claude_model.predict(prmpt,hist).content[0].text
+            response,cost = self.claude_model.predict(prmpt,hist)
+            json_str = re.search(r'\[.*\]', response.content[0].text, re.DOTALL).group(0)
             try:
                 # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-                qna_json = json.loads(response)
+                qna_json = json.loads(json_str)
             except json.JSONDecodeError:
                 # If there's a problem with parsing, log or handle it accordingly.
                 try:
-                    outp = self.mixtral.get_completion("return a json object \n "+outp)
+                    outp = self.mixtral.get_completion("return a json object \n "+json_str)
                     qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
                 except json.JSONDecodeError:
                     error_occured = True
