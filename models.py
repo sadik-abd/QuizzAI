@@ -29,7 +29,7 @@ class QuizzGenModel:
         # Assuming response.content contains the questions and answers in the desired format.
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-            outp = response.content[0].text
+            outp, cost = response.content[0].text
             
             qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
         except json.JSONDecodeError:
@@ -38,7 +38,7 @@ class QuizzGenModel:
                 
                 outp = self.mixtral.get_completion("Validate the following text. make a json object out of it and return the json object. please dont say a extra word that disrupts the quality of the json object \n '''"+outp+"'''")
                 
-                qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
+                qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
             except json.JSONDecodeError:
                 error_occured = True
                 qna_json = {"message":"Something went wrong please try again","data":outp}
@@ -57,8 +57,7 @@ class QuizzGenModel:
             User Gave These answers to your generated qna. Give a feedback on these. Also Give a score for each question. return answer in json objects. json object should be like this. {stt}
             User Answers: {ans}
             """
-            cost += (calculate_token_usage(prmpt+" "+json.dumps(hist)) / 1_000_000) * 12
-            response = self.claude_model.predict(prmpt,hist).content[0].text
+            response,cost = self.claude_model.predict(prmpt,hist).content[0].text
             try:
                 # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
                 qna_json = json.loads(response)
@@ -66,7 +65,7 @@ class QuizzGenModel:
                 # If there's a problem with parsing, log or handle it accordingly.
                 try:
                     outp = self.mixtral.get_completion("return a json object \n "+outp)
-                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":""}
+                    qna_json = {"data":json.loads(outp.encode("utf-8")), "costing":str(cost)}
                 except json.JSONDecodeError:
                     error_occured = True
                     qna_json = {"message":"Something went wrong please try again","data":outp}
