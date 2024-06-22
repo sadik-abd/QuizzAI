@@ -23,6 +23,10 @@ def load_pdf(path):
     return texts
 
 def load_pdf_ocr(path):
+    if path.endswith("jpg") or path.endswith("png") or path.endswith("jpeg"):
+        image = Image.open(path)
+        text = pytesseract.image_to_string(image)
+        return [text]
     images = convert_from_path(path)
     texts = convert_to_strings(images)
     return texts
