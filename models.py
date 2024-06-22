@@ -13,10 +13,11 @@ class QuizzGenModel:
         cost = 0
         # First, extract text from the PDF.
         history = {}
-        texts = load_pdf(pdf_path)  # Assuming the PDF contains mostly text.
+         # Assuming the PDF contains mostly text.
         if ocr_scan:  # If text extraction failed, fall back to OCR.
             texts = load_pdf_ocr(pdf_path)
-        
+        else:
+            texts = load_pdf(pdf_path) 
         # Combine all text pieces into one string for context.
         context = "\n######### New Page starts #############\n".join(texts)
         # Use the ClaudeModel to generate questions and answers.
