@@ -96,14 +96,15 @@ async def gen_message(
         saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
         with open(saved_path, "wb+") as file_object:
             file_object.write(doc.file.read())
-    
+
         # Generate the output using the model
         output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
-    
+
         # Create a response
         return output  # Sending back the JSON response
-    except Exception as E:
-        return str(E)
+    except Exception as e:
+        # Handle errors
+        raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
 
 @app.post("/gen_feedback")
 async def gen_feedback(data : FeedbackSchema):
