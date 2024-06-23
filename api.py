@@ -87,24 +87,22 @@ async def gen_message(
         prompt=prompt,
         ocr_scan=ocr_scan
     )
-    try:
-        # Save the main document
-        if not os.path.isdir(f"data/{data.userid}"):
-            os.system(f"mkdir data/{data.userid}")
-        if not os.path.isdir(f"data/{data.userid}/{data.subject}"): 
-            os.system(f"mkdir data/{data.userid}/{data.subject}")
-        saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
-        with open(saved_path, "wb+") as file_object:
-            file_object.write(doc.file.read())
 
-        # Generate the output using the model
-        output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
+    # Save the main document
+    if not os.path.isdir(f"data/{data.userid}"):
+        os.system(f"mkdir data/{data.userid}")
+    if not os.path.isdir(f"data/{data.userid}/{data.subject}"): 
+        os.system(f"mkdir data/{data.userid}/{data.subject}")
+    saved_path = os.path.join(f"data/{data.userid}/{data.subject}", doc.filename)  # Define your save directory
+    with open(saved_path, "wb+") as file_object:
+        file_object.write(doc.file.read())
 
-        # Create a response
-        return output  # Sending back the JSON response
-    except Exception as e:
-        # Handle errors
-        raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
+    # Generate the output using the model
+    output = model.generate(saved_path, data.num_questions,histpath=f"data/{data.userid}/{data.subject}/{data.docname}.json", user_req=data.prompt, ocr_scan=data.ocr_scan)
+
+    # Create a response
+    return output  # Sending back the JSON response
+
 
 @app.post("/gen_feedback")
 async def gen_feedback(data : FeedbackSchema):
