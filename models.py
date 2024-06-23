@@ -1,4 +1,4 @@
-from llms import ClaudeModel, MixtralModel
+from llms import ClaudeModel, MixtralModel, GeminiModel
 from doc_reader import load_pdf, load_pdf_ocr
 from cost_estimator import calculate_token_usage
 import json
@@ -7,6 +7,7 @@ import re
 class QuizzGenModel:
     def __init__(self, ) -> None:
         self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
+        self.gemini_model = GeminiModel()
         self.mixtral = MixtralModel("")
 
     def generate(self, pdf_path: str,num_ques : int,histpath="", user_req="",ocr_scan=False,lang="english"):
@@ -22,7 +23,7 @@ class QuizzGenModel:
         context = "\n######### New Page starts #############\n".join(texts)
         # Use the ClaudeModel to generate questions and answers.
         primary_prompt = prompts.get_prompt(num_ques,user_req) + "\n" + context
-        response, cost = self.claude_model.predict(primary_prompt)
+        response, cost = self.gemini_model.predict(primary_prompt)
         outp = ""
         error_occured = False
         

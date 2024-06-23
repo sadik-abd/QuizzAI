@@ -4,6 +4,8 @@ import tiktoken
 import copy
 from openai import OpenAI
 import os
+import google.generativeai as genai
+
 class MixtralModel:
     def __init__(self, prompt, model="mistralai/Mixtral-8x7B-Instruct-v0.1") -> None:
         self.sys_prompt = prompt
@@ -35,7 +37,7 @@ class ClaudeModel:
         self.client = Anthropic(api_key=os.environ.get("CLAUDE_KEY"))
         self.variant = "claude-3-sonnet-20240229"
     
-    def predict(self, inp, hist=None) -> Message:
+    def predict(self, inp, hist=None):
         if hist is None:
             message = self.client.messages.create(
                 max_tokens=4096,
@@ -65,3 +67,17 @@ class ClaudeModel:
             cost += (message.usage.output_tokens / 1_000_000) * 20
             return message, cost
 
+
+genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+class GeminiModel:
+    def __init__(self) -> None:
+        self.model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    
+    def predict(self, inp):
+        response = self.model.generate_content(inp)
+        cost = (response.usage_metadata.total_token_count / 1_000_000) * 10
+        txt = response.text.replace('`', '').replace("\n","")
+        if "json" in txt[:4]:
+            txt = txt[:4]
+        return txt, cost
+        
