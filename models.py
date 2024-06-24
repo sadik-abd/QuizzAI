@@ -4,6 +4,7 @@ from cost_estimator import calculate_token_usage
 import json
 import prompts
 import re
+
 class QuizzGenModel:
     def __init__(self, ) -> None:
         self.claude_model = ClaudeModel()  # Using the ClaudeModel for generating questions and answers.
@@ -31,7 +32,7 @@ class QuizzGenModel:
         # Assuming response.content contains the questions and answers in the desired format.
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
-            outp = response.content[0].text
+            outp = response
             json_str = re.search(r'\[.*\]', outp, re.DOTALL).group(0)
             qna_json = {"data":json.loads(json_str), "costing":str(cost)}
         except json.JSONDecodeError:
