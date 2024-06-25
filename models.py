@@ -33,6 +33,7 @@ class QuizzGenModel:
         try:
             # Attempt to parse the string into JSON directly, since Claude's responses should align with our needs.
             outp = response
+            print(outp)
             json_str = re.search(r'\[.*\]', outp, re.DOTALL).group(0)
             qna_json = {"data":json.loads(json_str), "costing":str(cost)}
         except json.JSONDecodeError:
